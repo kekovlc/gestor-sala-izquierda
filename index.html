@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestor Sala</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ── Header ── -->
+  <header class="header">
+    <div class="header-left">
+      <span id="room-name" class="room-name"></span>
+      <span id="offline-badge" class="offline-badge" hidden>
+        <span id="offline-text">Sin conexión</span>
+      </span>
+    </div>
+    <div class="header-clock">
+      <span id="clock-time" class="clock-time"></span>
+      <span id="clock-date" class="clock-date"></span>
+    </div>
+  </header>
+
+  <!-- ── Main status panel ── -->
+  <main id="app" class="app">
+
+    <!-- Status label (LIBRE / OCUPADA) -->
+    <div class="status-block">
+      <div id="status-label" class="status-label"></div>
+      <div id="status-sublabel" class="status-sublabel"></div>
+    </div>
+
+    <!-- Progress bar -->
+    <div id="progress-bar" class="progress-bar" hidden>
+      <div id="progress-bar-fill" class="progress-bar-fill"></div>
+    </div>
+
+    <!-- Countdown -->
+    <div id="countdown-wrap" class="countdown-wrap" hidden>
+      <span id="countdown-time" class="countdown-time"></span>
+    </div>
+
+    <!-- Booked info (visible when occupied) -->
+    <div id="booked-info" class="booked-info" hidden>
+      <div id="booked-title" class="booked-title"></div>
+      <div id="booked-with" class="booked-with">
+        <div id="booked-avatar" class="booked-avatar"></div>
+        <span id="booked-person-name" class="booked-person-name"></span>
+      </div>
+      <div id="booked-organizer" class="booked-organizer"></div>
+      <div id="next-meeting" class="next-meeting" hidden>
+        <span id="next-meeting-text"></span>
+      </div>
+    </div>
+
+    <!-- Check-in banner -->
+    <div id="checkin-banner" class="checkin-banner" hidden>
+      <p id="checkin-banner-sub" class="checkin-banner-sub"></p>
+      <div class="checkin-actions">
+        <button id="checkin-btn" class="btn btn--primary">Confirmar asistencia</button>
+        <button id="checkin-cancel-btn" class="btn btn--ghost">Cancelar reserva</button>
+      </div>
+    </div>
+
+    <!-- Quick booking buttons (shown when FREE) -->
+    <div class="quick-book">
+      <button class="btn btn--quick" data-quick-mins="15">15 min</button>
+      <button class="btn btn--quick" data-quick-mins="30">30 min</button>
+      <button class="btn btn--quick" data-quick-mins="60">1 hora</button>
+      <button id="quick-custom" class="btn btn--ghost">Otra duración</button>
+    </div>
+
+    <!-- End meeting + schedule another -->
+    <div class="booked-actions">
+      <button id="end-btn" class="btn btn--danger" hidden>Finalizar reunión</button>
+      <button id="schedule-other-btn" class="btn btn--ghost" hidden>Reservar otra sala</button>
+    </div>
+
+  </main>
+
+  <!-- ── Agenda panel ── -->
+  <section class="agenda">
+
+    <!-- Day tabs -->
+    <div id="day-tabs" class="day-tabs">
+      <button class="active" data-day="today">Hoy</button>
+      <button data-day="tomorrow">Mañana</button>
+      <button data-day="week">7 días</button>
+    </div>
+
+    <!-- Timeline -->
+    <div id="timeline" class="timeline">
+      <div id="timeline-hours" class="timeline-hours"></div>
+      <div id="timeline-track" class="timeline-track">
+        <div id="timeline-now" class="timeline-now"></div>
+      </div>
+    </div>
+
+    <!-- Events list header -->
+    <div class="events-header">
+      <span id="events-header-sub" class="events-header-sub"></span>
+    </div>
+
+    <!-- Events list -->
+    <div id="events-list" class="events-list"></div>
+
+  </section>
+
+  <!-- ════════════════════════════════════════════
+       MODALS
+  ════════════════════════════════════════════ -->
+
+  <!-- Who modal (quick booking — pick person) -->
+  <div id="who-modal" class="modal-overlay" hidden>
+    <div class="modal-box">
+      <button class="modal-close" data-who-close aria-label="Cerrar">✕</button>
+      <h2 id="who-modal-text" class="modal-title"></h2>
+      <div id="who-people-picker" class="people-picker"></div>
+    </div>
+  </div>
+
+  <!-- Title modal (quick booking — pick title) -->
+  <div id="title-modal" class="modal-overlay" hidden>
+    <div class="modal-box">
+      <button class="modal-close" data-title-close aria-label="Cerrar">✕</button>
+      <h2 id="title-modal-text" class="modal-title"></h2>
+      <div id="title-chips" class="title-chips"></div>
+      <input id="quick-title-input" class="modal-input" type="text" placeholder="O escribe un título…" autocomplete="off" />
+      <p id="title-modal-error" class="modal-error" hidden></p>
+      <button id="confirm-title" class="btn btn--primary btn--full">Reservar</button>
+    </div>
+  </div>
+
+  <!-- Full booking modal -->
+  <div id="modal" class="modal-overlay" hidden>
+    <div class="modal-box">
+      <button class="modal-close" data-close aria-label="Cerrar">✕</button>
+      <h2 class="modal-title">Nueva reserva</h2>
+
+      <!-- Person picker -->
+      <div id="people-field" class="modal-field">
+        <label class="modal-label">¿Quién reserva?</label>
+        <div id="people-picker" class="people-picker"></div>
+      </div>
+
+      <!-- Date -->
+      <div class="modal-row">
+        <div class="modal-field">
+          <label class="modal-label">Fecha</label>
+          <button id="book-date-trigger" class="modal-select-btn">
+            <span id="book-date-label">Hoy</span>
+          </button>
+        </div>
+
+        <!-- Start time -->
+        <div class="modal-field">
+          <label class="modal-label">Hora inicio</label>
+          <button id="book-time" class="modal-select-btn time-trigger" data-time-target="book-time">
+            --:--
+          </button>
+        </div>
+      </div>
+
+      <!-- Duration -->
+      <div class="modal-field">
+        <label class="modal-label">Duración</label>
+        <div id="duration-options" class="duration-options">
+          <button class="btn btn--dur" data-mins="15">15 min</button>
+          <button class="btn btn--dur selected" data-mins="30">30 min</button>
+          <button class="btn btn--dur" data-mins="60">1 hora</button>
+          <button class="btn btn--dur" data-mins="more">Más…</button>
+        </div>
+        <div id="duration-custom" class="duration-custom" hidden>
+          <button id="duration-back" class="btn btn--ghost btn--sm">← Volver</button>
+          <button id="book-end-time" class="modal-select-btn time-trigger" data-time-target="book-end-time">
+            --:--
+          </button>
+          <p id="duration-custom-info" class="duration-info"></p>
+        </div>
+      </div>
+
+      <!-- Title (optional) -->
+      <div class="modal-field">
+        <label class="modal-label">Título (opcional)</label>
+        <input id="book-title" class="modal-input" type="text" placeholder="Reunión, Llamada…" autocomplete="off" />
+      </div>
+
+      <p id="modal-error" class="modal-error" hidden></p>
+      <button id="confirm-book" class="btn btn--primary btn--full">Reservar</button>
+    </div>
+  </div>
+
+  <!-- Date picker modal -->
+  <div id="date-modal" class="modal-overlay" hidden>
+    <div class="modal-box modal-box--calendar">
+      <button class="modal-close" data-date-close aria-label="Cerrar">✕</button>
+      <div class="cal-nav">
+        <button id="cal-prev" class="btn btn--icon">‹</button>
+        <span id="cal-title" class="cal-title"></span>
+        <button id="cal-next" class="btn btn--icon">›</button>
+      </div>
+      <div id="cal-grid" class="cal-grid"></div>
+      <button id="cal-today-btn" class="btn btn--ghost btn--full">Hoy</button>
+    </div>
+  </div>
+
+  <!-- Time picker modal -->
+  <div id="time-modal" class="modal-overlay" hidden>
+    <div class="modal-box modal-box--time">
+      <button class="modal-close" data-time-close aria-label="Cerrar">✕</button>
+      <h2 id="time-modal-title" class="modal-title">Selecciona la hora</h2>
+      <div class="time-display">
+        <span id="time-display-hour" class="time-display-part">--</span>
+        <span class="time-display-sep">:</span>
+        <span id="time-display-minute" class="time-display-part">--</span>
+      </div>
+      <div class="time-grids">
+        <div id="time-grid-hours" class="time-grid"></div>
+        <div id="time-grid-minutes" class="time-grid"></div>
+      </div>
+      <button id="time-confirm" class="btn btn--primary btn--full">Confirmar</button>
+    </div>
+  </div>
+
+  <!-- Cancel modal -->
+  <div id="cancel-modal" class="modal-overlay" hidden>
+    <div class="modal-box">
+      <button class="modal-close" data-cancel-close aria-label="Cerrar">✕</button>
+      <h2 class="modal-title">Cancelar reunión</h2>
+      <p id="cancel-modal-text" class="modal-body"></p>
+      <p id="cancel-modal-error" class="modal-error" hidden></p>
+      <div class="modal-actions">
+        <button class="btn btn--ghost" data-cancel-close>No, volver</button>
+        <button id="confirm-cancel" class="btn btn--danger">Sí, cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- End meeting modal -->
+  <div id="end-modal" class="modal-overlay" hidden>
+    <div class="modal-box">
+      <button class="modal-close" data-end-close aria-label="Cerrar">✕</button>
+      <h2 class="modal-title">Finalizar reunión</h2>
+      <p id="end-modal-text" class="modal-body"></p>
+      <p id="end-modal-error" class="modal-error" hidden></p>
+      <div class="modal-actions">
+        <button class="btn btn--ghost" data-end-close>No, volver</button>
+        <button id="confirm-end" class="btn btn--danger">Sí, finalizar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

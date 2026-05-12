@@ -4,7 +4,7 @@
  * CONFIG: change these values when you connect n8n
  * ========================================================= */
 const CONFIG = {
-  ROOM_NAME: "Sala Reuniones",
+  ROOM_NAME: "Sala Izquierda",
 
   // n8n webhooks
   N8N_GET_EVENTS_URL: "https://n8n-grupogomez.cloud/webhook/sala-eventos",
@@ -109,7 +109,10 @@ async function fetchEvents() {
   if (CONFIG.USE_MOCK || !CONFIG.N8N_GET_EVENTS_URL) {
     return buildMockEvents();
   }
-  const res = await fetch(CONFIG.N8N_GET_EVENTS_URL, { method: "GET" });
+  const res = await fetch(CONFIG.N8N_GET_EVENTS_URL, {
+    method: "GET",
+    headers: { "Authorization": "Bearer public" },
+  });
   if (!res.ok) throw new Error(`GET events ${res.status}`);
   const raw = await res.json();
   return normalizeEvents(raw);
